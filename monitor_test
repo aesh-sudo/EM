@@ -34,9 +34,7 @@ if [ -f "$PID_FILE" ] && [ "$status" = 1 ]; then
   process_pid=$(cat "$PID_FILE")
   current_status=1
 
-  if curl -s -f "$monitoring_server" >/dev/null; then
-    echo "Успешный запрос к серверу мониторинга"
-  else
+  if ! curl -s -f "$monitoring_server" >/dev/null; then
    log_message "ОШИБКА: Сервер мониторинга не доступен"
   fi
 
