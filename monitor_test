@@ -4,7 +4,7 @@ PID_FILE="/tmp/my_test.pid"
 PID_FILE_DBL="/tmp/my_test.dbl"
 STATUS_FILE="/tmp/my_test.status"
 
-monitoring_server="https://test.com/monitoring/test/api"
+# monitoring_server="https://test.com/monitoring/test/api"
 monitoring_server="https://httpbin.org/status/200"
 log_file="/var/log/monitoring.log"
 
