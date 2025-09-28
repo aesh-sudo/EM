@@ -1,0 +1,53 @@
+#!/bin/bash
+
+PID_FILE="/tmp/my_test.pid"
+PID_FILE_DBL="/tmp/my_test.dbl"
+STATUS_FILE="/tmp/my_test.status"
+
+monitoring_server="https://test.com/monitoring/test/api"
+monitoring_server="https://httpbin.org/status/200"
+log_file="/var/log/monitoring.log"
+
+# Функция для логирования
+log_message() {
+  local message="$1"
+  echo "$(date '+%Y-%m-%d %H:%M:%S'): $message" >> $log_file
+}
+
+if [ ! -f "$log_file" ]; then
+  sudo touch "$log_file"
+  sudo chmod 644 "$log_file"
+  log_message "Лог-файл создан"
+fi
+
+# Мониторинг
+# Определение текущего статуса процесса
+
+if [ -f "$STATUS_FILE" ]; then
+  status=$(cat "$STATUS_FILE")
+else
+  status=0
+fi
+
+
+if [ -f "$PID_FILE" ] && [ "$status" = 1 ]; then
+  process_pid=$(cat "$PID_FILE")
+  current_status=1
+
+  if curl -s -f "$monitoring_server" >/dev/null; then
+    echo "Успешный запрос к серверу мониторинга"
+  else
+   log_message "ОШИБКА: Сервер мониторинга не доступен"
+  fi
+
+  if [ -f "$PID_FILE_DBL" ]; then
+    process_pid_old=$(cat "$PID_FILE_DBL")
+    if [ "$process_pid" != "$process_pid_old" ]; then
+      message="Перезапуск: процесс $process_pid_old был остановлен"
+      log_message "$message"
+      echo "$process_pid" > "$PID_FILE_DBL"
+    fi
+  else
+    echo "$process_pid" > "$PID_FILE_DBL"
+  fi
+fi
