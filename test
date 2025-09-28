@@ -1,0 +1,25 @@
+#!/bin/bash
+
+PID_FILE="/tmp/my_test.pid"
+PID_FILE_DBL="/tmp/my_test.dbl"
+STATUS_FILE="/tmp/my_test.status"
+
+echo "1" > "$STATUS_FILE"
+echo $$ > "$PID_FILE"
+
+cleanup() {
+  rm -f "$PID_FILE"
+  rm -f "$PID_FILE_DBL"
+  echo "0" > "$STATUS_FILE"
+  exit 0
+}
+
+force_cleanup() {
+  echo "0" > "$STATUS_FILE"
+  exit 1
+}
+
+trap cleanup TERM INT EXIT
+trap force_cleanup KILL
+
+sleep "$1"
