@@ -6,12 +6,8 @@ LOG_FILE="/var/log/monitoring.log"
 STATE_FILE="/var/lib/monitoring/test.pid"
 MONITOR_SRV="https://httpbin.org/status/200"
 
-echo "aaa"
-
 # Поиск процесса
 CURRENT_PID=$(pgrep -f "^/bin/bash /usr/local/bin/test ")
-
-echo "bbb"
 
 if [ -n "$CURRENT_PID" ]; then
   # Процесс запущен
