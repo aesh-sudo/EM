@@ -1,51 +1,42 @@
 #!/bin/bash
 
-PID_FILE="/tmp/my_test.pid"
-PID_FILE_DBL="/tmp/my_test.dbl"
-STATUS_FILE="/tmp/my_test.status"
+set -x
 
-# monitoring_server="https://test.com/monitoring/test/api"
-monitoring_server="https://httpbin.org/status/200"
-log_file="/var/log/monitoring.log"
+LOG_FILE="/var/log/monitoring.log"
+STATE_FILE="/var/lib/monitoring/test.pid"
+MONITOR_SRV="https://httpbin.org/status/200"
 
-# Функция для логирования
-log_message() {
-  local message="$1"
-  echo "$(date '+%Y-%m-%d %H:%M:%S'): $message" >> $log_file
-}
+echo "aaa"
 
-if [ ! -f "$log_file" ]; then
-  sudo touch "$log_file"
-  sudo chmod 644 "$log_file"
-  log_message "Лог-файл создан"
-fi
+# Поиск процесса
+CURRENT_PID=$(pgrep -f "^/bin/bash /usr/local/bin/test ")
 
-# Мониторинг
-# Определение текущего статуса процесса
+echo "bbb"
 
-if [ -f "$STATUS_FILE" ]; then
-  status=$(cat "$STATUS_FILE")
-else
-  status=0
-fi
+if [ -n "$CURRENT_PID" ]; then
+  # Процесс запущен
 
+  mkdir -p "$(dirname "$STATE_FILE")"
 
-if [ -f "$PID_FILE" ] && [ "$status" = 1 ]; then
-  process_pid=$(cat "$PID_FILE")
-  current_status=1
-
-  if ! curl -s -f "$monitoring_server" >/dev/null; then
-   log_message "ОШИБКА: Сервер мониторинга не доступен"
-  fi
-
-  if [ -f "$PID_FILE_DBL" ]; then
-    process_pid_old=$(cat "$PID_FILE_DBL")
-    if [ "$process_pid" != "$process_pid_old" ]; then
-      message="Перезапуск: процесс $process_pid_old был остановлен"
-      log_message "$message"
-      echo "$process_pid" > "$PID_FILE_DBL"
+  if [ -f "$STATE_FILE" ]; then
+    LAST_PID=$(cat "$STATE_FILE")
+    if [ "$CURRENT_PID" != "$LAST_PID" ]; then
+      echo "$(date): Process 'test' was restarted (PID: $CURRENT_PID)" >> "$LOG_FILE"
     fi
   else
-    echo "$process_pid" > "$PID_FILE_DBL"
+    echo "$(date): Process 'test' started (PID: $CURRENT_PID)" >> "$LOG_FILE"
+  fi
+
+  # Сохранение PID текущего процесса
+  echo "$CURRENT_PID" > "$STATE_FILE"
+
+  # HTTPS-запрос
+  if ! curl -sSf "$MONITOR_SRV" > /dev/null; then
+    echo "$(date): Failed to reach monitoring API" >> "$LOG_FILE"
+  fi
+else
+  # Процесс не запущен. Удалим файл состояния "STATE_FILE", чтобы разделить перезапуск и запуск процесса
+  if [ -f "$STATE_FILE" ]; then
+    rm -f "$STATE_FILE"
   fi
 fi
